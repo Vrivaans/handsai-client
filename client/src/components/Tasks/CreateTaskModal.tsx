@@ -121,22 +121,14 @@ const CreateTaskModal: React.FC<{
                     </div>
                 }
                 buttons={
-                    <div className="flex items-center gap-3">
-                        <Button
-                            variant="outline"
-                            onClick={() => onOpenChange(false)}
-                        >
-                            {localize('com_ui_cancel') || 'Cancelar'}
-                        </Button>
-                        <Button
-                            variant="submit"
-                            onClick={handleSave}
-                            disabled={createTask.isLoading || !title}
-                            className="text-white"
-                        >
-                            {createTask.isLoading ? localize('com_ui_creating') || 'Saving...' : localize('com_ui_save') || 'Guardar'}
-                        </Button>
-                    </div>
+                    <Button
+                        variant="submit"
+                        onClick={handleSave}
+                        disabled={createTask.isLoading || !title}
+                        className="text-white"
+                    >
+                        {createTask.isLoading ? localize('com_ui_creating') || 'Saving...' : localize('com_ui_save') || 'Guardar'}
+                    </Button>
                 }
             />
         </OGDialog>
