@@ -1,4 +1,10 @@
-# HandsAI Client — Data Schemas: Objective & Task
+# HandsAI Core Schemas & Patterns
+
+> [!IMPORTANT]
+> **Localization Requirement**: For any UI development in `handsai-client`, all new labels, titles, and placeholders **MUST** be added to `client/src/locales/en/translation.json` (and other relevant languages) using the `com_ui_` prefix. Avoid hardcoded strings in components; always use the `useLocalize` hook.
+
+## 1. Task Engine Schemas
+: Objective & Task
 
 ## Contexto
 

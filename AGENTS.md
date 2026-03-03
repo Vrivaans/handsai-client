@@ -1,5 +1,9 @@
 # LibreChat
 
+> [!IMPORTANT]
+> **Localization Requirement**: For any UI development in `handsai-client` (fork of libreChat), all new labels, titles, and placeholders **MUST** be added to `client/src/locales/en/translation.json` (and other relevant languages) using the `com_ui_` prefix. Avoid hardcoded strings in components; always use the `useLocalize` hook.
+
+
 ## Project Overview
 
 LibreChat is a monorepo with the following key workspaces:
