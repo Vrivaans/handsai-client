@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     createColumnHelper,
     flexRender,
@@ -7,7 +7,8 @@ import {
 } from '@tanstack/react-table';
 import { Play, Pause, Trash2, CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { Button, Spinner } from '@librechat/client';
-import { useListTasksQuery, useDeleteTaskMutation, useUpdateTaskMutation } from '~/data-provider';
+import { useListTasksQuery, useDeleteTaskMutation } from '~/data-provider';
+import { TaskModal } from '~/components/Tasks';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
@@ -17,7 +18,13 @@ const TaskTable: React.FC<{ objectiveId?: string }> = ({ objectiveId }) => {
     const localize = useLocalize();
     const { data: tasks, isLoading } = useListTasksQuery({ objectiveId });
     const deleteTask = useDeleteTaskMutation();
-    const updateTask = useUpdateTaskMutation('');
+    const [editingTask, setEditingTask] = useState<any>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+    const handleEdit = (task: any) => {
+        setEditingTask(task);
+        setIsEditModalOpen(true);
+    };
 
     const columns = useMemo(
         () => [
@@ -25,9 +32,23 @@ const TaskTable: React.FC<{ objectiveId?: string }> = ({ objectiveId }) => {
                 header: localize('com_ui_id') || 'ID',
                 cell: (info) => <span className="text-xs text-gray-500">{info.getValue().slice(-6)}</span>,
             }),
+            columnHelper.accessor('title', {
+                header: localize('com_ui_title') || 'Title',
+                cell: (info) => {
+                    const task = info.row.original;
+                    return (
+                        <div
+                            className="cursor-pointer font-medium text-gray-900 dark:text-gray-100 transition-colors hover:text-blue-500"
+                            onClick={() => handleEdit(task)}
+                        >
+                            {info.getValue() || 'Untitled'}
+                        </div>
+                    );
+                },
+            }),
             columnHelper.accessor('type', {
                 header: localize('com_ui_type') || 'Type',
-                cell: (info) => <span className="font-medium text-gray-900 dark:text-gray-100">{info.getValue()}</span>,
+                cell: (info) => <span className="text-sm text-gray-600 dark:text-gray-400">{info.getValue()}</span>,
             }),
             columnHelper.accessor('status', {
                 header: localize('com_ui_status') || 'Status',
@@ -106,39 +127,46 @@ const TaskTable: React.FC<{ objectiveId?: string }> = ({ objectiveId }) => {
     }
 
     return (
-        <div className="w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
-            <table className="w-full text-left">
-                <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-850">
-                    {table.getHeaderGroups().map((headerGroup) => (
-                        <tr key={headerGroup.id}>
-                            {headerGroup.headers.map((header) => (
-                                <th key={header.id} className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                                </th>
-                            ))}
-                        </tr>
-                    ))}
-                </thead>
-                <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
-                    {table.getRowModel().rows.map((row) => (
-                        <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-850/50 transition-colors">
-                            {row.getVisibleCells().map((cell) => (
-                                <td key={cell.id} className="whitespace-nowrap px-4 py-3 align-middle">
-                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+        <>
+            <div className="w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                <table className="w-full text-left">
+                    <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-850">
+                        {table.getHeaderGroups().map((headerGroup) => (
+                            <tr key={headerGroup.id}>
+                                {headerGroup.headers.map((header) => (
+                                    <th key={header.id} className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                    </th>
+                                ))}
+                            </tr>
+                        ))}
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                        {table.getRowModel().rows.map((row) => (
+                            <tr key={row.id} className="hover:bg-gray-50 dark:hover:bg-gray-850/50 transition-colors">
+                                {row.getVisibleCells().map((cell) => (
+                                    <td key={cell.id} className="whitespace-nowrap px-4 py-3 align-middle">
+                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                        {tasks?.length === 0 && (
+                            <tr>
+                                <td colSpan={columns.length} className="px-4 py-12 text-center text-gray-500">
+                                    {localize('com_ui_no_tasks_found') || 'No tasks found.'}
                                 </td>
-                            ))}
-                        </tr>
-                    ))}
-                    {tasks?.length === 0 && (
-                        <tr>
-                            <td colSpan={columns.length} className="px-4 py-12 text-center text-gray-500">
-                                {localize('com_ui_no_tasks_found') || 'No tasks found.'}
-                            </td>
-                        </tr>
-                    )}
-                </tbody>
-            </table>
-        </div>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+            <TaskModal
+                open={isEditModalOpen}
+                onOpenChange={setIsEditModalOpen}
+                task={editingTask}
+            />
+        </>
     );
 };
 

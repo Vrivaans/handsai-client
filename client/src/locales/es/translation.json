@@ -783,6 +783,7 @@
   "com_ui_x_selected": "{{0}} seleccionado",
   "com_ui_yes": "Sí",
   "com_ui_create_task": "Nueva tarea",
+  "com_ui_edit_task": "Editar tarea",
   "com_ui_create_objective": "Nuevo objetivo",
   "com_ui_edit_objective": "Editar objetivo",
   "com_ui_objective": "Objetivo",

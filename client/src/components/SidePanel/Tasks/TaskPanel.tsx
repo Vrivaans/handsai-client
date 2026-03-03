@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@librechat/client';
-import { TaskTable, ObjectiveTable, ObjectiveModal, CreateTaskModal } from '~/components/Tasks';
+import { TaskTable, ObjectiveTable, ObjectiveModal, TaskModal } from '~/components/Tasks';
 import { useLocalize } from '~/hooks';
 
 const TaskPanel: React.FC = () => {
@@ -51,7 +51,7 @@ const TaskPanel: React.FC = () => {
                 open={isObjectiveModalOpen}
                 onOpenChange={setIsObjectiveModalOpen}
             />
-            <CreateTaskModal
+            <TaskModal
                 open={isTaskModalOpen}
                 onOpenChange={setIsTaskModalOpen}
             />
