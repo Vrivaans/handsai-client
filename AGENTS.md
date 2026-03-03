@@ -1,5 +1,14 @@
 # LibreChat
 
+## Branching Workflow
+
+> [!IMPORTANT]
+> **Branch Strategy**: All new feature development, including work by Jules, must be performed on the `develop` branch.
+> 1. Create features on `develop`.
+> 2. Verify implementation and stability.
+> 3. Once stable, merge `develop` into `main`.
+> **Never commit experimental code directly to `main`.**
+
 > [!IMPORTANT]
 > **Localization Requirement**: For any UI development in `handsai-client` (fork of libreChat), all new labels, titles, and placeholders **MUST** be added to `client/src/locales/en/translation.json` (and other relevant languages) using the `com_ui_` prefix. Avoid hardcoded strings in components; always use the `useLocalize` hook.
 
