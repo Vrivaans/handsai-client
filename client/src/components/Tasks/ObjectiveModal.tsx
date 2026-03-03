@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     OGDialog,
     OGDialogTemplate,
@@ -7,36 +7,54 @@ import {
     Label,
     Textarea,
 } from '@librechat/client';
-import { useCreateObjectiveMutation } from '~/data-provider';
+import { useCreateObjectiveMutation, useUpdateObjectiveMutation } from '~/data-provider';
 import { useLocalize } from '~/hooks';
 
-const CreateObjectiveModal: React.FC<{ open: boolean; onOpenChange: (open: boolean) => void }> = ({
-    open,
-    onOpenChange,
-}) => {
+const CreateObjectiveModal: React.FC<{
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    objective?: any;
+}> = ({ open, onOpenChange, objective }) => {
     const localize = useLocalize();
     const createObjective = useCreateObjectiveMutation();
+    const updateObjective = useUpdateObjectiveMutation(objective?._id || '');
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
 
+    useEffect(() => {
+        if (open) {
+            setTitle(objective?.title || '');
+            setDescription(objective?.description || '');
+        }
+    }, [open, objective]);
+
     const handleSave = () => {
         if (!title) return;
-        createObjective.mutate(
-            { title, description },
-            {
+        const payload = { title, description };
+
+        if (objective) {
+            updateObjective.mutate(payload, {
+                onSuccess: () => {
+                    onOpenChange(false);
+                },
+            });
+        } else {
+            createObjective.mutate(payload, {
                 onSuccess: () => {
                     onOpenChange(false);
                     setTitle('');
                     setDescription('');
                 },
-            }
-        );
+            });
+        }
     };
+
+    const isSubmitting = createObjective.isLoading || updateObjective.isLoading;
 
     return (
         <OGDialog open={open} onOpenChange={onOpenChange}>
             <OGDialogTemplate
-                title={localize('com_ui_create_objective') || 'New Objective'}
+                title={objective ? localize('com_ui_edit_objective') || 'Edit Objective' : localize('com_ui_create_objective') || 'New Objective'}
                 showCloseButton={false}
                 className="w-11/12 md:max-w-lg"
                 main={
@@ -72,10 +90,10 @@ const CreateObjectiveModal: React.FC<{ open: boolean; onOpenChange: (open: boole
                     <Button
                         variant="submit"
                         onClick={handleSave}
-                        disabled={createObjective.isLoading || !title}
+                        disabled={isSubmitting || !title}
                         className="text-white"
                     >
-                        {createObjective.isLoading ? localize('com_ui_creating') || 'Saving...' : localize('com_ui_save') || 'Guardar'}
+                        {isSubmitting ? localize('com_ui_creating') || 'Saving...' : localize('com_ui_save') || 'Guardar'}
                     </Button>
                 }
             />
