@@ -90,10 +90,10 @@ const CreateTaskModal: React.FC<{
                             </Label>
                             <Select value={objectiveId} onValueChange={setObjectiveId}>
                                 <SelectTrigger className="bg-transparent">
-                                    <SelectValue placeholder="Select an objective" />
+                                    <SelectValue placeholder={localize('com_ui_select_objective') || 'Select an objective'} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="none">None</SelectItem>
+                                    <SelectItem value="none">{localize('com_ui_none') || 'None'}</SelectItem>
                                     {objectives?.map((obj) => (
                                         <SelectItem key={obj._id} value={obj._id}>
                                             {obj.title}
@@ -111,10 +111,10 @@ const CreateTaskModal: React.FC<{
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="general">General</SelectItem>
-                                    <SelectItem value="research">Research</SelectItem>
-                                    <SelectItem value="code">Code</SelectItem>
-                                    <SelectItem value="browser">Browser</SelectItem>
+                                    <SelectItem value="general">{localize('com_ui_general') || 'General'}</SelectItem>
+                                    <SelectItem value="research">{localize('com_ui_research') || 'Research'}</SelectItem>
+                                    <SelectItem value="code">{localize('com_ui_code') || 'Code'}</SelectItem>
+                                    <SelectItem value="browser">{localize('com_ui_browser') || 'Browser'}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

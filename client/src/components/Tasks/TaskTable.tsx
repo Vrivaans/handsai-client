@@ -8,27 +8,29 @@ import {
 import { Play, Pause, Trash2, CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { Button, Spinner } from '@librechat/client';
 import { useListTasksQuery, useDeleteTaskMutation, useUpdateTaskMutation } from '~/data-provider';
+import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
 const columnHelper = createColumnHelper<any>();
 
 const TaskTable: React.FC<{ objectiveId?: string }> = ({ objectiveId }) => {
+    const localize = useLocalize();
     const { data: tasks, isLoading } = useListTasksQuery({ objectiveId });
     const deleteTask = useDeleteTaskMutation();
-    const updateTask = useUpdateTaskMutation(''); // We'll set the ID dynamically in the mutation call or handle it differently
+    const updateTask = useUpdateTaskMutation('');
 
     const columns = useMemo(
         () => [
             columnHelper.accessor('_id', {
-                header: 'ID',
+                header: localize('com_ui_id') || 'ID',
                 cell: (info) => <span className="text-xs text-gray-500">{info.getValue().slice(-6)}</span>,
             }),
             columnHelper.accessor('type', {
-                header: 'Type',
+                header: localize('com_ui_type') || 'Type',
                 cell: (info) => <span className="font-medium text-gray-900 dark:text-gray-100">{info.getValue()}</span>,
             }),
             columnHelper.accessor('status', {
-                header: 'Status',
+                header: localize('com_ui_status') || 'Status',
                 cell: (info) => {
                     const status = info.getValue();
                     const statusConfig: Record<string, { icon: any; color: string }> = {
@@ -48,16 +50,16 @@ const TaskTable: React.FC<{ objectiveId?: string }> = ({ objectiveId }) => {
                 },
             }),
             columnHelper.accessor('schedule', {
-                header: 'Schedule',
+                header: localize('com_ui_schedule') || 'Schedule',
                 cell: (info) => {
                     const schedule = info.getValue();
-                    if (!schedule) return <span className="text-gray-400">Manual</span>;
+                    if (!schedule) return <span className="text-gray-400">{localize('com_ui_manual') || 'Manual'}</span>;
                     return <span className="text-sm text-gray-600 dark:text-gray-400">{schedule.type}</span>;
                 },
             }),
             columnHelper.display({
                 id: 'actions',
-                header: 'Actions',
+                header: localize('com_ui_actions') || 'Actions',
                 cell: (info) => {
                     const task = info.row.original;
                     return (
@@ -86,7 +88,7 @@ const TaskTable: React.FC<{ objectiveId?: string }> = ({ objectiveId }) => {
                 },
             }),
         ],
-        [deleteTask],
+        [deleteTask, localize],
     );
 
     const table = useReactTable({
@@ -130,7 +132,7 @@ const TaskTable: React.FC<{ objectiveId?: string }> = ({ objectiveId }) => {
                     {tasks?.length === 0 && (
                         <tr>
                             <td colSpan={columns.length} className="px-4 py-12 text-center text-gray-500">
-                                No tasks found.
+                                {localize('com_ui_no_tasks_found') || 'No tasks found.'}
                             </td>
                         </tr>
                     )}

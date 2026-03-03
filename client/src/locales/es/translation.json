@@ -791,6 +791,17 @@
   "com_ui_creating": "Guardando...",
   "com_ui_enter_name": "Ingresar nombre",
   "com_ui_enter_description": "Ingresar descripción (opcional)",
+  "com_ui_tasks": "Tareas",
+  "com_ui_objectives": "Objetivos",
+  "com_ui_tasks_background": "Tareas en segundo plano",
+  "com_ui_goal": "Meta",
+  "com_ui_status": "Estado",
+  "com_ui_actions": "Acciones",
+  "com_ui_id": "ID",
+  "com_ui_schedule": "Programación",
+  "com_ui_manual": "Manual",
+  "com_ui_no_tasks_found": "No se encontraron tareas.",
+  "com_ui_start_objective_desc": "Comienza definiendo tu primer objetivo...",
   "com_ui_zoom": "Zoom",
   "com_user_message": "Usted"
 }

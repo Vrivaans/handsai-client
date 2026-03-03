@@ -32,7 +32,7 @@ const TaskPanel: React.FC = () => {
             <section>
                 <div className="mb-3 flex items-center justify-between">
                     <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-tight">
-                        {localize('com_ui_tasks') || 'Background Tasks'}
+                        {localize('com_ui_tasks_background') || 'Background Tasks'}
                     </h3>
                     <Button
                         variant="outline"

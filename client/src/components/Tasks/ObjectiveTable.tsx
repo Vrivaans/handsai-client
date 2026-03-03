@@ -8,18 +8,20 @@ import {
 import { Trophy, Target, Trash2, CheckCircle2, Circle } from 'lucide-react';
 import { Button, Spinner } from '@librechat/client';
 import { useListObjectivesQuery, useDeleteObjectiveMutation } from '~/data-provider';
+import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
 const columnHelper = createColumnHelper<any>();
 
 const ObjectiveTable: React.FC = () => {
+    const localize = useLocalize();
     const { data: objectives, isLoading } = useListObjectivesQuery();
     const deleteObjective = useDeleteObjectiveMutation();
 
     const columns = useMemo(
         () => [
             columnHelper.accessor('title', {
-                header: 'Goal',
+                header: localize('com_ui_goal') || 'Goal',
                 cell: (info) => (
                     <div className="flex items-center gap-2">
                         <Target size={16} className="text-blue-500" />
@@ -28,7 +30,7 @@ const ObjectiveTable: React.FC = () => {
                 ),
             }),
             columnHelper.accessor('status', {
-                header: 'Status',
+                header: localize('com_ui_status') || 'Status',
                 cell: (info) => {
                     const status = info.getValue();
                     const isComplete = status === 'completed';
@@ -41,7 +43,7 @@ const ObjectiveTable: React.FC = () => {
                 },
             }),
             columnHelper.accessor('tasksGenerated', {
-                header: 'Tasks',
+                header: localize('com_ui_tasks') || 'Tasks',
                 cell: (info) => (
                     <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
                         <Trophy size={14} />
@@ -51,7 +53,7 @@ const ObjectiveTable: React.FC = () => {
             }),
             columnHelper.display({
                 id: 'actions',
-                header: 'Actions',
+                header: localize('com_ui_actions') || 'Actions',
                 cell: (info) => {
                     const objective = info.row.original;
                     return (
@@ -68,7 +70,7 @@ const ObjectiveTable: React.FC = () => {
                 },
             }),
         ],
-        [deleteObjective],
+        [deleteObjective, localize],
     );
 
     const table = useReactTable({
@@ -112,7 +114,7 @@ const ObjectiveTable: React.FC = () => {
                     {objectives?.length === 0 && (
                         <tr>
                             <td colSpan={columns.length} className="px-5 py-16 text-center text-gray-500 italic">
-                                Start by defining your first objective...
+                                {localize('com_ui_start_objective_desc') || 'Start by defining your first objective...'}
                             </td>
                         </tr>
                     )}
