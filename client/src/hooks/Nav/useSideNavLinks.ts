@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Blocks, MCPIcon, AttachmentIcon } from '@librechat/client';
-import { Database, Bookmark, Settings2, ArrowRightToLine, MessageSquareQuote } from 'lucide-react';
+import { Database, Bookmark, Settings2, ArrowRightToLine, MessageSquareQuote, ListTodo } from 'lucide-react';
 import {
   Permissions,
   EModelEndpoint,
@@ -19,6 +19,7 @@ import PromptsAccordion from '~/components/Prompts/PromptsAccordion';
 import Parameters from '~/components/SidePanel/Parameters/Panel';
 import { MemoryPanel } from '~/components/SidePanel/Memories';
 import FilesPanel from '~/components/SidePanel/Files/Panel';
+import TaskPanel from '~/components/SidePanel/Tasks/TaskPanel';
 import { useHasAccess, useMCPServerManager } from '~/hooks';
 
 export default function useSideNavLinks({
@@ -171,6 +172,14 @@ export default function useSideNavLinks({
         Component: MCPBuilderPanel,
       });
     }
+
+    links.push({
+      title: 'com_ui_tasks',
+      label: '',
+      icon: ListTodo,
+      id: 'tasks',
+      Component: TaskPanel,
+    });
 
     links.push({
       title: 'com_sidepanel_hide_panel',

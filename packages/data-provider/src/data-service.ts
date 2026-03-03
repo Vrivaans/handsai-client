@@ -794,9 +794,50 @@ export function getMessagesByConvoId(conversationId: string): Promise<s.TMessage
   return request.get(endpoints.messages({ conversationId }));
 }
 
-export function getPrompt(id: string): Promise<{ prompt: t.TPrompt }> {
+export const getPrompt = (id: string): Promise<{ prompt: t.TPrompt }> => {
   return request.get(endpoints.getPrompt(id));
-}
+};
+
+/* Tasks & Objectives */
+export const getTasks = (params?: { status?: string; objectiveId?: string }): Promise<any[]> => {
+  return request.get(endpoints.tasks(params));
+};
+
+export const getTaskById = (id: string): Promise<any> => {
+  return request.get(endpoints.taskById(id));
+};
+
+export const createTask = (payload: any): Promise<any> => {
+  return request.post(endpoints.tasks(), payload);
+};
+
+export const updateTask = (id: string, payload: any): Promise<any> => {
+  return request.patch(endpoints.taskById(id), payload);
+};
+
+export const deleteTask = (id: string): Promise<void> => {
+  return request.delete(endpoints.taskById(id));
+};
+
+export const getObjectives = (params?: { status?: string }): Promise<any[]> => {
+  return request.get(endpoints.objectives(params));
+};
+
+export const getObjectiveById = (id: string): Promise<any> => {
+  return request.get(endpoints.objectiveById(id));
+};
+
+export const createObjective = (payload: any): Promise<any> => {
+  return request.post(endpoints.objectives(), payload);
+};
+
+export const updateObjective = (id: string, payload: any): Promise<any> => {
+  return request.patch(endpoints.objectiveById(id), payload);
+};
+
+export const deleteObjective = (id: string): Promise<void> => {
+  return request.delete(endpoints.objectiveById(id));
+};
 
 export function getPrompts(filter: t.TPromptsWithFilterRequest): Promise<t.TPrompt[]> {
   return request.get(endpoints.getPromptsWithFilters(filter));

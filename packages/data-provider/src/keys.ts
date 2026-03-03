@@ -64,6 +64,11 @@ export enum QueryKeys {
   activeJobs = 'activeJobs',
   /* Agent API Keys */
   agentApiKeys = 'agentApiKeys',
+  /* Tasks & Objectives */
+  tasks = 'tasks',
+  task = 'task',
+  objectives = 'objectives',
+  objective = 'objective',
 }
 
 // Dynamic query keys that require parameters
@@ -96,4 +101,11 @@ export enum MutationKeys {
   enableTwoFactor = 'enableTwoFactor',
   verifyTwoFactor = 'verifyTwoFactor',
   updateMemoryPreferences = 'updateMemoryPreferences',
+  /* Tasks & Objectives */
+  createTask = 'createTask',
+  updateTask = 'updateTask',
+  deleteTask = 'deleteTask',
+  createObjective = 'createObjective',
+  updateObjective = 'updateObjective',
+  deleteObjective = 'deleteObjective',
 }

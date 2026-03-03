@@ -28,6 +28,7 @@ const { jwtLogin, ldapLogin, passportLogin } = require('~/strategies');
 const { updateInterfacePermissions } = require('~/models/interface');
 const { checkMigrations } = require('./services/start/migration');
 const initializeMCPs = require('./services/initializeMCPs');
+const TaskRunner = require('./services/TaskRunner');
 const configureSocialLogins = require('./socialLogins');
 const { getAppConfig } = require('./services/Config');
 const staticCache = require('./utils/staticCache');
@@ -163,6 +164,8 @@ const startServer = async () => {
 
   app.use('/api/tags', routes.tags);
   app.use('/api/mcp', routes.mcp);
+  app.use('/api/tasks', routes.tasks);
+  app.use('/api/objectives', routes.objectives);
 
   /** 404 for unmatched API routes */
   app.use('/api', apiNotFound);
@@ -203,6 +206,7 @@ const startServer = async () => {
     await initializeMCPs();
     await initializeOAuthReconnectManager();
     await checkMigrations();
+    TaskRunner.start();
 
     // Configure stream services (auto-detects Redis from USE_REDIS env var)
     const streamServices = createStreamServices();
@@ -274,6 +278,9 @@ process.on('uncaughtException', (err) => {
 
   process.exit(1);
 });
+
+process.on('SIGTERM', () => TaskRunner.stop());
+process.on('SIGINT', () => TaskRunner.stop());
 
 /** Export app for easier testing purposes */
 module.exports = app;

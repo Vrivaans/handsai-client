@@ -43,6 +43,11 @@ export * from './web';
 export * from './cache';
 /* Stream */
 export * from './stream';
+/* Tasks & Objectives */
+export * from './tasks/taskRouter';
+export * from './tasks/objectiveRouter';
+export * as taskService from './tasks/taskService';
+export * as objectiveService from './tasks/objectiveService';
 /* Diagnostics */
 export { memoryDiagnostics } from './utils/memory';
 /* types */
