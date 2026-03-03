@@ -139,6 +139,7 @@ const ObjectiveTable: React.FC = () => {
                 </table>
             </div>
             <ObjectiveModal
+                key={editingObjective?._id || 'new'}
                 open={isEditModalOpen}
                 onOpenChange={setIsEditModalOpen}
                 objective={editingObjective}

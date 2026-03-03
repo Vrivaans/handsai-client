@@ -10,6 +10,7 @@ import {
 } from '@librechat/client';
 import { useCreateTaskMutation, useUpdateTaskMutation, useListObjectivesQuery } from '~/data-provider';
 import { useLocalize } from '~/hooks';
+import { createDropdownSetter } from '~/utils';
 
 const TaskModal: React.FC<{
     open: boolean;
@@ -30,7 +31,8 @@ const TaskModal: React.FC<{
         if (open) {
             setTitle(task?.title || '');
             setDescription(task?.description || '');
-            setObjectiveId(task?.objectiveId || defaultObjectiveId || 'none');
+            const objId = typeof task?.objectiveId === 'object' ? task.objectiveId?._id : task?.objectiveId;
+            setObjectiveId(objId || defaultObjectiveId || 'none');
             setType(task?.type || 'general');
         }
     }, [open, task, defaultObjectiveId]);
@@ -49,6 +51,14 @@ const TaskModal: React.FC<{
         { label: localize('com_ui_code') || 'Code', value: 'code' },
         { label: localize('com_ui_browser') || 'Browser', value: 'browser' },
     ], [localize]);
+
+    const currentObjective = useMemo(() =>
+        availableObjectives.find((obj) => obj.value === objectiveId) || availableObjectives[0],
+        [availableObjectives, objectiveId]);
+
+    const currentType = useMemo(() =>
+        typeOptions.find((t) => t.value === type) || typeOptions[0],
+        [typeOptions, type]);
 
     const handleSave = () => {
         if (!title) return;
@@ -70,6 +80,9 @@ const TaskModal: React.FC<{
                 onSuccess: () => {
                     onOpenChange(false);
                 },
+                onError: (error) => {
+                    console.error('Error updating task:', error);
+                }
             });
         } else {
             createTask.mutate(payload, {
@@ -79,6 +92,9 @@ const TaskModal: React.FC<{
                     setDescription('');
                     setObjectiveId(defaultObjectiveId || 'none');
                 },
+                onError: (error) => {
+                    console.error('Error creating task:', error);
+                }
             });
         }
     };
@@ -123,8 +139,8 @@ const TaskModal: React.FC<{
                                 {localize('com_ui_objective') || 'Objective'}
                             </Label>
                             <SelectDropDown
-                                value={objectiveId}
-                                setValue={setObjectiveId}
+                                value={currentObjective}
+                                setValue={createDropdownSetter(setObjectiveId)}
                                 availableValues={availableObjectives}
                                 showLabel={false}
                                 emptyTitle={false}
@@ -136,8 +152,8 @@ const TaskModal: React.FC<{
                                 {localize('com_ui_type') || 'Type'}
                             </Label>
                             <SelectDropDown
-                                value={type}
-                                setValue={setType}
+                                value={currentType}
+                                setValue={createDropdownSetter(setType)}
                                 availableValues={typeOptions}
                                 showLabel={false}
                                 emptyTitle={false}

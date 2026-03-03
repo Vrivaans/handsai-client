@@ -162,6 +162,7 @@ const TaskTable: React.FC<{ objectiveId?: string }> = ({ objectiveId }) => {
                 </table>
             </div>
             <TaskModal
+                key={editingTask?._id || 'new'}
                 open={isEditModalOpen}
                 onOpenChange={setIsEditModalOpen}
                 task={editingTask}
