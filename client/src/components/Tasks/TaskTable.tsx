@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-table';
 import { Play, Pause, Trash2, CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { Button, Spinner } from '@librechat/client';
-import { useListTasksQuery, useDeleteTaskMutation } from '~/data-provider';
+import { useListTasksQuery, useDeleteTaskMutation, useUpdateTaskStatusMutation } from '~/data-provider';
 import { TaskModal } from '~/components/Tasks';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
@@ -18,6 +18,7 @@ const TaskTable: React.FC<{ objectiveId?: string }> = ({ objectiveId }) => {
     const localize = useLocalize();
     const { data: tasks, isLoading } = useListTasksQuery({ objectiveId });
     const deleteTask = useDeleteTaskMutation();
+    const updateTaskStatus = useUpdateTaskStatusMutation();
     const [editingTask, setEditingTask] = useState<any>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -89,11 +90,20 @@ const TaskTable: React.FC<{ objectiveId?: string }> = ({ objectiveId }) => {
                                 variant="outline"
                                 size="sm"
                                 className="h-8 w-8 p-0"
-                                onClick={() => {
-                                    /* TODO: toggle pause/resume */
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const nextStatus = task.status === 'cancelled' ? 'pending' : 'cancelled';
+                                    updateTaskStatus.mutate({ id: task._id, status: nextStatus });
                                 }}
+                                disabled={updateTaskStatus.isLoading && updateTaskStatus.variables?.id === task._id}
                             >
-                                {task.status === 'paused' ? <Play size={14} /> : <Pause size={14} />}
+                                {updateTaskStatus.isLoading && updateTaskStatus.variables?.id === task._id ? (
+                                    <Spinner className="h-4 w-4" />
+                                ) : task.status === 'cancelled' ? (
+                                    <Play size={14} />
+                                ) : (
+                                    <Pause size={14} />
+                                )}
                             </Button>
                             <Button
                                 variant="destructive"
@@ -109,7 +119,7 @@ const TaskTable: React.FC<{ objectiveId?: string }> = ({ objectiveId }) => {
                 },
             }),
         ],
-        [deleteTask, localize],
+        [deleteTask, updateTaskStatus, localize],
     );
 
     const table = useReactTable({

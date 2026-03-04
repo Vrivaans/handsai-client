@@ -26,6 +26,20 @@ const TaskModal: React.FC<{
     const [description, setDescription] = useState('');
     const [objectiveId, setObjectiveId] = useState(defaultObjectiveId || 'none');
     const [type, setType] = useState('general');
+    const [cronExpression, setCronExpression] = useState('');
+    const [frequency, setFrequency] = useState('');
+    const [maxRuns, setMaxRuns] = useState<number | ''>('');
+    const [runAt, setRunAt] = useState('');
+    const [customMinutes, setCustomMinutes] = useState<number | ''>('');
+
+    const freqOptions = useMemo(() => [
+        { label: localize('com_ui_freq_none') || "Don't repeat", value: '' },
+        { label: localize('com_ui_freq_hourly') || 'Hourly', value: 'hourly' },
+        { label: localize('com_ui_freq_daily') || 'Daily', value: 'daily' },
+        { label: localize('com_ui_freq_weekly') || 'Weekly', value: 'weekly' },
+        { label: localize('com_ui_freq_monthly') || 'Monthly', value: 'monthly' },
+        { label: localize('com_ui_freq_custom') || 'Custom', value: 'custom' },
+    ], [localize]);
 
     useEffect(() => {
         if (open) {
@@ -34,6 +48,9 @@ const TaskModal: React.FC<{
             const objId = typeof task?.objectiveId === 'object' ? task.objectiveId?._id : task?.objectiveId;
             setObjectiveId(objId || defaultObjectiveId || 'none');
             setType(task?.type || 'general');
+            setCronExpression(task?.schedule?.cronExpression || '');
+            setMaxRuns(task?.schedule?.maxRuns || '');
+            setRunAt(task?.schedule?.runAt ? new Date(task?.schedule?.runAt).toISOString().slice(0, 16) : '');
         }
     }, [open, task, defaultObjectiveId]);
 
@@ -60,6 +77,51 @@ const TaskModal: React.FC<{
         typeOptions.find((t) => t.value === type) || typeOptions[0],
         [typeOptions, type]);
 
+    // Auto-calculate cron expression when frequency or runAt changes
+    useEffect(() => {
+        if (!frequency) return;
+
+        if (frequency === 'custom' && customMinutes !== '') {
+            setCronExpression(`*/${customMinutes} * * * *`);
+            return;
+        }
+
+        let minute = '0';
+        let hour = '*';
+        let dom = '*';
+        let month = '*';
+        let dow = '*';
+
+        if (runAt) {
+            const date = new Date(runAt);
+            if (!isNaN(date.getTime())) {
+                minute = date.getMinutes().toString();
+                hour = date.getHours().toString();
+                dom = date.getDate().toString();
+            }
+        }
+
+        switch (frequency) {
+            case 'hourly':
+                hour = '*'; dom = '*'; month = '*'; dow = '*';
+                break;
+            case 'daily':
+                dom = '*'; month = '*'; dow = '*';
+                break;
+            case 'weekly':
+                dom = '*'; month = '*';
+                if (runAt) dow = new Date(runAt).getDay().toString();
+                break;
+            case 'monthly':
+                month = '*'; dow = '*';
+                break;
+        }
+
+        if (frequency !== 'custom') {
+            setCronExpression(`${minute} ${hour} ${dom} ${month} ${dow}`);
+        }
+    }, [frequency, runAt, customMinutes]);
+
     const handleSave = () => {
         if (!title) return;
         const payload: any = {
@@ -73,6 +135,16 @@ const TaskModal: React.FC<{
             payload.objectiveId = objectiveId;
         } else {
             payload.objectiveId = null;
+        }
+
+        const schedule: any = {};
+        if (cronExpression) schedule.cronExpression = cronExpression;
+        if (maxRuns !== '') schedule.maxRuns = Number(maxRuns);
+        if (runAt) schedule.runAt = new Date(runAt).toISOString();
+        if (Object.keys(schedule).length > 0) {
+            payload.schedule = schedule;
+        } else if (task?.schedule) {
+            payload.schedule = null;
         }
 
         if (task) {
@@ -91,6 +163,9 @@ const TaskModal: React.FC<{
                     setTitle('');
                     setDescription('');
                     setObjectiveId(defaultObjectiveId || 'none');
+                    setCronExpression('');
+                    setMaxRuns('');
+                    setRunAt('');
                 },
                 onError: (error) => {
                     console.error('Error creating task:', error);
@@ -158,6 +233,60 @@ const TaskModal: React.FC<{
                                 showLabel={false}
                                 emptyTitle={false}
                                 className="bg-transparent border border-border-light rounded-md"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium text-text-primary">
+                                    {localize('com_ui_frequency') || 'Frecuencia'}
+                                </Label>
+                                <SelectDropDown
+                                    value={frequency}
+                                    setValue={createDropdownSetter(setFrequency)}
+                                    availableValues={freqOptions}
+                                    showLabel={false}
+                                    emptyTitle={false}
+                                    className="bg-transparent border border-border-light rounded-md"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium text-text-primary">
+                                    {localize('com_ui_schedule_max_runs') || 'Max Runs'}
+                                </Label>
+                                <Input
+                                    type="number"
+                                    value={maxRuns}
+                                    onChange={(e) => setMaxRuns(e.target.value === '' ? '' : Number(e.target.value))}
+                                    placeholder="e.g. 10"
+                                    className="w-full bg-transparent border-border-light"
+                                />
+                            </div>
+                        </div>
+
+                        {frequency === 'custom' && (
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium text-text-primary">
+                                    {localize('com_ui_frequency_minutes') || 'Minutos'}
+                                </Label>
+                                <Input
+                                    type="number"
+                                    value={customMinutes}
+                                    onChange={(e) => setCustomMinutes(e.target.value === '' ? '' : Number(e.target.value))}
+                                    placeholder="Ej. 15 (para cada 15 min)"
+                                    className="w-full bg-transparent border-border-light"
+                                />
+                            </div>
+                        )}
+
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium text-text-primary">
+                                {localize('com_ui_schedule_run_at') || 'Run At (Specific Time)'}
+                            </Label>
+                            <Input
+                                type="datetime-local"
+                                value={runAt}
+                                onChange={(e) => setRunAt(e.target.value)}
+                                className="w-full bg-transparent border-border-light"
                             />
                         </div>
                     </div>
