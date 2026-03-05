@@ -97,13 +97,27 @@ async function invokeAgent(objective, token) {
     const baseUrl = getBaseUrl();
     const endpoint = 'agents';
 
+    // Fetch the proper string ID for the agent (e.g. 'agent_IEt...')
+    // LibreChat expects this string ID, otherwise it treats it as an ephemeral agent and throws missing_model
+    let agentStringId = objective.agentId?.toString();
+    try {
+        const mongoose = require('mongoose');
+        const Agent = mongoose.model('Agent');
+        const agentDoc = await Agent.findById(objective.agentId).select('id').lean();
+        if (agentDoc && agentDoc.id) {
+            agentStringId = agentDoc.id;
+        }
+    } catch (err) {
+        logger.warn(`[ObjectiveRunner] Could not fetch string ID for agent ${objective.agentId}:`, err.message);
+    }
+
     const body = {
         endpoint,
         conversationId: 'new',
         parentMessageId: '00000000-0000-0000-0000-000000000000',
         // Build context out of the Objective
         text: `System Alert: This is an automated execution for your continuous Objective.\n\n[Objective Title]: ${objective.title}\n\n[Objective Details]: ${objective.description}\n\nPlease proceed with your objective autonomously.`,
-        agent_id: objective.agentId?.toString(),
+        agent_id: agentStringId,
         isTask: true, // Reuse the task runner logic on the agent API side to avoid UI popups
     };
 
