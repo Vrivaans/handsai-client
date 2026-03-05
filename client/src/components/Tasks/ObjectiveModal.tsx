@@ -7,7 +7,7 @@ import {
     Label,
     Textarea,
 } from '@librechat/client';
-import { useCreateObjectiveMutation, useUpdateObjectiveMutation } from '~/data-provider';
+import { useCreateObjectiveMutation, useUpdateObjectiveMutation, useListAgentsQuery } from '~/data-provider';
 import { useLocalize } from '~/hooks';
 import { createDropdownSetter } from '~/utils';
 import { SelectDropDown } from '@librechat/client';
@@ -20,8 +20,10 @@ const CreateObjectiveModal: React.FC<{
     const localize = useLocalize();
     const createObjective = useCreateObjectiveMutation();
     const updateObjective = useUpdateObjectiveMutation(objective?._id || '');
+    const { data: agents = { data: [] } } = useListAgentsQuery();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [agentId, setAgentId] = useState('');
     const [enabled, setEnabled] = useState(true);
     const [cronExpression, setCronExpression] = useState('');
     const [frequency, setFrequency] = useState('');
@@ -32,6 +34,8 @@ const CreateObjectiveModal: React.FC<{
         if (open) {
             setTitle(objective?.title || '');
             setDescription(objective?.description || '');
+            const aId = typeof objective?.agentId === 'object' ? objective.agentId?._id : objective?.agentId;
+            setAgentId(aId || '');
             setEnabled(objective?.runner?.enabled ?? true);
             const cron = objective?.runner?.cronExpression || '';
             setCronExpression(cron);
@@ -64,6 +68,18 @@ const CreateObjectiveModal: React.FC<{
         { label: localize('com_ui_freq_monthly'), value: 'monthly' },
         { label: localize('com_ui_freq_custom'), value: 'custom' },
     ], [localize]);
+
+    const availableAgents = useMemo(() => {
+        const list = (agents?.data || []).map((agent: any) => ({
+            label: agent.name || agent.id,
+            value: agent._id || agent.id,
+        }));
+        return [{ label: localize('com_ui_select_agent') || 'Select an agent', value: '' }, ...list];
+    }, [agents, localize]);
+
+    const currentAgent = useMemo(() =>
+        availableAgents.find((a) => a.value === agentId) || availableAgents[0],
+        [availableAgents, agentId]);
 
     // Auto-calculate cron expression when frequency or runAt changes
     useEffect(() => {
@@ -111,10 +127,11 @@ const CreateObjectiveModal: React.FC<{
     }, [frequency, runAt, customMinutes]);
 
     const handleSave = () => {
-        if (!title) return;
+        if (!title || !agentId) return;
         const payload: any = {
             title,
             description,
+            agentId,
             runner: {
                 enabled,
                 cronExpression,
@@ -133,6 +150,7 @@ const CreateObjectiveModal: React.FC<{
                     onOpenChange(false);
                     setTitle('');
                     setDescription('');
+                    setAgentId('');
                     setEnabled(true);
                     setCronExpression('');
                     setFrequency('');
@@ -175,6 +193,19 @@ const CreateObjectiveModal: React.FC<{
                                 placeholder={localize('com_ui_enter_description') || 'Enter description (optional)'}
                                 className="min-h-[100px] w-full resize-none bg-transparent"
                                 rows={3}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium text-text-primary">
+                                {localize('com_ui_agent') || 'Agent *'}
+                            </Label>
+                            <SelectDropDown
+                                value={currentAgent}
+                                setValue={createDropdownSetter(setAgentId)}
+                                availableValues={availableAgents}
+                                showLabel={false}
+                                emptyTitle={false}
+                                className="bg-transparent border border-border-light rounded-md"
                             />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -238,7 +269,7 @@ const CreateObjectiveModal: React.FC<{
                     <Button
                         variant="submit"
                         onClick={handleSave}
-                        disabled={isSubmitting || !title}
+                        disabled={isSubmitting || !title || !agentId}
                         className="text-white"
                     >
                         {isSubmitting ? localize('com_ui_creating') || 'Saving...' : localize('com_ui_save') || 'Guardar'}

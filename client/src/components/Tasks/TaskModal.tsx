@@ -8,7 +8,7 @@ import {
     Textarea,
     SelectDropDown,
 } from '@librechat/client';
-import { useCreateTaskMutation, useUpdateTaskMutation, useListObjectivesQuery } from '~/data-provider';
+import { useCreateTaskMutation, useUpdateTaskMutation, useListObjectivesQuery, useListAgentsQuery } from '~/data-provider';
 import { useLocalize } from '~/hooks';
 import { createDropdownSetter } from '~/utils';
 
@@ -22,9 +22,11 @@ const TaskModal: React.FC<{
     const createTask = useCreateTaskMutation();
     const updateTask = useUpdateTaskMutation(task?._id || '');
     const { data: objectives } = useListObjectivesQuery();
+    const { data: agents = { data: [] } } = useListAgentsQuery();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [objectiveId, setObjectiveId] = useState(defaultObjectiveId || 'none');
+    const [agentId, setAgentId] = useState('');
     const [type, setType] = useState('general');
     const [cronExpression, setCronExpression] = useState('');
     const [frequency, setFrequency] = useState('');
@@ -47,6 +49,8 @@ const TaskModal: React.FC<{
             setDescription(task?.description || '');
             const objId = typeof task?.objectiveId === 'object' ? task.objectiveId?._id : task?.objectiveId;
             setObjectiveId(objId || defaultObjectiveId || 'none');
+            const aId = typeof task?.agentId === 'object' ? task.agentId?._id : task?.agentId;
+            setAgentId(aId || '');
             setType(task?.type || 'general');
             setCronExpression(task?.schedule?.cronExpression || '');
             setMaxRuns(task?.schedule?.maxRuns || '');
@@ -62,6 +66,14 @@ const TaskModal: React.FC<{
         return [{ label: localize('com_ui_none') || 'None', value: 'none' }, ...list];
     }, [objectives, localize]);
 
+    const availableAgents = useMemo(() => {
+        const list = (agents?.data || []).map((agent: any) => ({
+            label: agent.name || agent.id,
+            value: agent._id || agent.id,
+        }));
+        return [{ label: localize('com_ui_select_agent') || 'Select an agent', value: '' }, ...list];
+    }, [agents, localize]);
+
     const typeOptions = useMemo(() => [
         { label: localize('com_ui_general') || 'General', value: 'general' },
         { label: localize('com_ui_research') || 'Research', value: 'research' },
@@ -72,6 +84,10 @@ const TaskModal: React.FC<{
     const currentObjective = useMemo(() =>
         availableObjectives.find((obj) => obj.value === objectiveId) || availableObjectives[0],
         [availableObjectives, objectiveId]);
+
+    const currentAgent = useMemo(() =>
+        availableAgents.find((a) => a.value === agentId) || availableAgents[0],
+        [availableAgents, agentId]);
 
     const currentType = useMemo(() =>
         typeOptions.find((t) => t.value === type) || typeOptions[0],
@@ -123,13 +139,14 @@ const TaskModal: React.FC<{
     }, [frequency, runAt, customMinutes]);
 
     const handleSave = () => {
-        if (!title) return;
+        if (!title || !agentId) return;
         const payload: any = {
             title,
             description,
             type,
             origin: task?.origin || 'user',
             status: task?.status || 'pending',
+            agentId,
         };
         if (objectiveId && objectiveId !== 'none') {
             payload.objectiveId = objectiveId;
@@ -163,6 +180,7 @@ const TaskModal: React.FC<{
                     setTitle('');
                     setDescription('');
                     setObjectiveId(defaultObjectiveId || 'none');
+                    setAgentId('');
                     setCronExpression('');
                     setMaxRuns('');
                     setRunAt('');
@@ -217,6 +235,19 @@ const TaskModal: React.FC<{
                                 value={currentObjective}
                                 setValue={createDropdownSetter(setObjectiveId)}
                                 availableValues={availableObjectives}
+                                showLabel={false}
+                                emptyTitle={false}
+                                className="bg-transparent border border-border-light rounded-md"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium text-text-primary">
+                                {localize('com_ui_agent') || 'Agent *'}
+                            </Label>
+                            <SelectDropDown
+                                value={currentAgent}
+                                setValue={createDropdownSetter(setAgentId)}
+                                availableValues={availableAgents}
                                 showLabel={false}
                                 emptyTitle={false}
                                 className="bg-transparent border border-border-light rounded-md"
@@ -295,7 +326,7 @@ const TaskModal: React.FC<{
                     <Button
                         variant="submit"
                         onClick={handleSave}
-                        disabled={isSubmitting || !title}
+                        disabled={isSubmitting || !title || !agentId}
                         className="text-white"
                     >
                         {isSubmitting ? localize('com_ui_creating') || 'Saving...' : localize('com_ui_save') || 'Guardar'}
