@@ -40,6 +40,19 @@ export const useDeleteTaskMutation = (): UseMutationResult<void, unknown, string
 };
 
 /**
+ * Hook for quick updating a Task's status
+ */
+export const useUpdateTaskStatusMutation = (): UseMutationResult<any, unknown, { id: string; status: string }, unknown> => {
+    const queryClient = useQueryClient();
+    return useMutation(({ id, status }) => dataService.updateTask(id, { status }), {
+        onSuccess: (updatedTask, { id }) => {
+            queryClient.setQueryData([QueryKeys.task, id], updatedTask);
+            queryClient.invalidateQueries([QueryKeys.tasks]);
+        },
+    });
+};
+
+/**
  * Hook for creating a new Objective
  */
 export const useCreateObjectiveMutation = (): UseMutationResult<any, unknown, any, unknown> => {
@@ -71,6 +84,19 @@ export const useDeleteObjectiveMutation = (): UseMutationResult<void, unknown, s
     const queryClient = useQueryClient();
     return useMutation((id: string) => dataService.deleteObjective(id), {
         onSuccess: () => {
+            queryClient.invalidateQueries([QueryKeys.objectives]);
+        },
+    });
+};
+
+/**
+ * Hook for quick updating an Objective's runner state
+ */
+export const useUpdateObjectiveRunnerMutation = (): UseMutationResult<any, unknown, { id: string; runner: any }, unknown> => {
+    const queryClient = useQueryClient();
+    return useMutation(({ id, runner }) => dataService.updateObjective(id, { runner }), {
+        onSuccess: (updatedObjective, { id }) => {
+            queryClient.setQueryData([QueryKeys.objective, id], updatedObjective);
             queryClient.invalidateQueries([QueryKeys.objectives]);
         },
     });

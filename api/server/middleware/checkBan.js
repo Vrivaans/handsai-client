@@ -44,8 +44,13 @@ const banResponse = async (req, res) => {
  *
  * @returns {Promise<function|Object>} - Returns a Promise which when resolved calls next middleware if user or source IP is not banned. Otherwise calls `banResponse()` and sets ban details in `banCache`.
  */
-const checkBan = async (req, res, next = () => {}) => {
+const checkBan = async (req, res, next = () => { }) => {
   try {
+    // Internal runner calls (TaskRunner/ObjectiveRunner) bypass ban checks entirely
+    if (req.headers['x-task-runner'] === '1') {
+      return next();
+    }
+
     const { BAN_VIOLATIONS } = process.env ?? {};
 
     if (!isEnabled(BAN_VIOLATIONS)) {

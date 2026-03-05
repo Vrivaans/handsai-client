@@ -29,6 +29,7 @@ const { updateInterfacePermissions } = require('~/models/interface');
 const { checkMigrations } = require('./services/start/migration');
 const initializeMCPs = require('./services/initializeMCPs');
 const TaskRunner = require('./services/TaskRunner');
+const ObjectiveRunner = require('./services/ObjectiveRunner');
 const configureSocialLogins = require('./socialLogins');
 const { getAppConfig } = require('./services/Config');
 const staticCache = require('./utils/staticCache');
@@ -207,6 +208,7 @@ const startServer = async () => {
     await initializeOAuthReconnectManager();
     await checkMigrations();
     TaskRunner.start();
+    ObjectiveRunner.start();
 
     // Configure stream services (auto-detects Redis from USE_REDIS env var)
     const streamServices = createStreamServices();
@@ -279,8 +281,8 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-process.on('SIGTERM', () => TaskRunner.stop());
-process.on('SIGINT', () => TaskRunner.stop());
+process.on('SIGTERM', () => { TaskRunner.stop(); ObjectiveRunner.stop(); });
+process.on('SIGINT', () => { TaskRunner.stop(); ObjectiveRunner.stop(); });
 
 /** Export app for easier testing purposes */
 module.exports = app;

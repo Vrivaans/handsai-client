@@ -5,9 +5,9 @@ import {
     getCoreRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import { Trophy, Target, Trash2, CheckCircle2, Circle } from 'lucide-react';
+import { Trophy, Target, Trash2, CheckCircle2, Circle, Play, Pause } from 'lucide-react';
 import { Button, Spinner } from '@librechat/client';
-import { useListObjectivesQuery, useDeleteObjectiveMutation } from '~/data-provider';
+import { useListObjectivesQuery, useDeleteObjectiveMutation, useUpdateObjectiveRunnerMutation } from '~/data-provider';
 import { ObjectiveModal } from '~/components/Tasks';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
@@ -18,6 +18,7 @@ const ObjectiveTable: React.FC = () => {
     const localize = useLocalize();
     const { data: objectives, isLoading } = useListObjectivesQuery();
     const deleteObjective = useDeleteObjectiveMutation();
+    const updateRunner = useUpdateObjectiveRunnerMutation();
     const [editingObjective, setEditingObjective] = useState<any>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -72,21 +73,45 @@ const ObjectiveTable: React.FC = () => {
                 header: localize('com_ui_actions') || 'Actions',
                 cell: (info) => {
                     const objective = info.row.original;
+                    const isEnabled = objective.runner?.enabled !== false;
                     return (
-                        <Button
-                            variant="destructive"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => deleteObjective.mutate(objective._id)}
-                            disabled={deleteObjective.isLoading}
-                        >
-                            {deleteObjective.isLoading ? <Spinner className="h-4 w-4" /> : <Trash2 size={14} />}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateRunner.mutate({
+                                        id: objective._id,
+                                        runner: { ...objective.runner, enabled: !isEnabled }
+                                    });
+                                }}
+                                disabled={updateRunner.isLoading && updateRunner.variables?.id === objective._id}
+                            >
+                                {updateRunner.isLoading && updateRunner.variables?.id === objective._id ? (
+                                    <Spinner className="h-4 w-4" />
+                                ) : !isEnabled ? (
+                                    <Play size={14} />
+                                ) : (
+                                    <Pause size={14} />
+                                )}
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={() => deleteObjective.mutate(objective._id)}
+                                disabled={deleteObjective.isLoading}
+                            >
+                                {deleteObjective.isLoading ? <Spinner className="h-4 w-4" /> : <Trash2 size={14} />}
+                            </Button>
+                        </div>
                     );
                 },
             }),
         ],
-        [deleteObjective, localize],
+        [deleteObjective, updateRunner, localize],
     );
 
     const table = useReactTable({

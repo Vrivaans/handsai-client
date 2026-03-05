@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     OGDialog,
     OGDialogTemplate,
@@ -7,8 +7,10 @@ import {
     Label,
     Textarea,
 } from '@librechat/client';
-import { useCreateObjectiveMutation, useUpdateObjectiveMutation } from '~/data-provider';
+import { useCreateObjectiveMutation, useUpdateObjectiveMutation, useListAgentsQuery } from '~/data-provider';
 import { useLocalize } from '~/hooks';
+import { createDropdownSetter } from '~/utils';
+import { SelectDropDown } from '@librechat/client';
 
 const CreateObjectiveModal: React.FC<{
     open: boolean;
@@ -18,19 +20,123 @@ const CreateObjectiveModal: React.FC<{
     const localize = useLocalize();
     const createObjective = useCreateObjectiveMutation();
     const updateObjective = useUpdateObjectiveMutation(objective?._id || '');
+    const { data: agents = { data: [] } } = useListAgentsQuery();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
+    const [agentId, setAgentId] = useState('');
+    const [enabled, setEnabled] = useState(true);
+    const [cronExpression, setCronExpression] = useState('');
+    const [frequency, setFrequency] = useState('');
+    const [runAt, setRunAt] = useState('');
+    const [customMinutes, setCustomMinutes] = useState<number | ''>('');
 
     useEffect(() => {
         if (open) {
             setTitle(objective?.title || '');
             setDescription(objective?.description || '');
+            const aId = typeof objective?.agentId === 'object' ? objective.agentId?._id : objective?.agentId;
+            setAgentId(aId || '');
+            setEnabled(objective?.runner?.enabled ?? true);
+            const cron = objective?.runner?.cronExpression || '';
+            setCronExpression(cron);
+
+            if (cron.startsWith('*/') && cron.endsWith('* * * *')) {
+                setFrequency('custom');
+                setCustomMinutes(Number(cron.split(' ')[0].replace('*/', '')));
+            } else {
+                setFrequency(cron ? 'custom' : '');
+                setCustomMinutes('');
+            }
+            setRunAt('');
         }
     }, [open, objective]);
 
+    const enabledOptions = useMemo(() => [
+        { label: localize('com_ui_enabled'), value: 'true' },
+        { label: localize('com_ui_disabled'), value: 'false' }
+    ], [localize]);
+
+    const currentEnabled = useMemo(() =>
+        enabledOptions.find(o => o.value === (enabled ? 'true' : 'false')) || enabledOptions[0],
+        [enabled, enabledOptions]);
+
+    const freqOptions = useMemo(() => [
+        { label: localize('com_ui_freq_none'), value: '' },
+        { label: localize('com_ui_freq_hourly'), value: 'hourly' },
+        { label: localize('com_ui_freq_daily'), value: 'daily' },
+        { label: localize('com_ui_freq_weekly'), value: 'weekly' },
+        { label: localize('com_ui_freq_monthly'), value: 'monthly' },
+        { label: localize('com_ui_freq_custom'), value: 'custom' },
+    ], [localize]);
+
+    const availableAgents = useMemo(() => {
+        const list = (agents?.data || []).map((agent: any) => ({
+            label: agent.name || agent.id,
+            value: agent._id || agent.id,
+        }));
+        return [{ label: localize('com_ui_select_agent') || 'Select an agent', value: '' }, ...list];
+    }, [agents, localize]);
+
+    const currentAgent = useMemo(() =>
+        availableAgents.find((a) => a.value === agentId) || availableAgents[0],
+        [availableAgents, agentId]);
+
+    // Auto-calculate cron expression when frequency or runAt changes
+    useEffect(() => {
+        if (!frequency) return;
+
+        if (frequency === 'custom' && customMinutes !== '') {
+            setCronExpression(`*/${customMinutes} * * * *`);
+            return;
+        }
+
+        let minute = '0';
+        let hour = '*';
+        let dom = '*';
+        let month = '*';
+        let dow = '*';
+
+        if (runAt) {
+            const date = new Date(runAt);
+            if (!isNaN(date.getTime())) {
+                minute = date.getMinutes().toString();
+                hour = date.getHours().toString();
+                dom = date.getDate().toString();
+            }
+        }
+
+        switch (frequency) {
+            case 'hourly':
+                hour = '*'; dom = '*'; month = '*'; dow = '*';
+                break;
+            case 'daily':
+                dom = '*'; month = '*'; dow = '*';
+                break;
+            case 'weekly':
+                dom = '*'; month = '*';
+                if (runAt) dow = new Date(runAt).getDay().toString();
+                break;
+            case 'monthly':
+                month = '*'; dow = '*';
+                break;
+        }
+
+        if (frequency !== 'custom') {
+            setCronExpression(`${minute} ${hour} ${dom} ${month} ${dow}`);
+        }
+    }, [frequency, runAt, customMinutes]);
+
     const handleSave = () => {
-        if (!title) return;
-        const payload = { title, description };
+        if (!title || !agentId) return;
+        const payload: any = {
+            title,
+            description,
+            agentId,
+            runner: {
+                enabled,
+                cronExpression,
+            }
+        };
 
         if (objective) {
             updateObjective.mutate(payload, {
@@ -44,6 +150,11 @@ const CreateObjectiveModal: React.FC<{
                     onOpenChange(false);
                     setTitle('');
                     setDescription('');
+                    setAgentId('');
+                    setEnabled(true);
+                    setCronExpression('');
+                    setFrequency('');
+                    setRunAt('');
                 },
             });
         }
@@ -84,13 +195,81 @@ const CreateObjectiveModal: React.FC<{
                                 rows={3}
                             />
                         </div>
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium text-text-primary">
+                                {localize('com_ui_agent') || 'Agent *'}
+                            </Label>
+                            <SelectDropDown
+                                value={currentAgent}
+                                setValue={createDropdownSetter(setAgentId)}
+                                availableValues={availableAgents}
+                                showLabel={false}
+                                emptyTitle={false}
+                                className="bg-transparent border border-border-light rounded-md"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium text-text-primary">
+                                    {localize('com_ui_status') || 'Runner Status'}
+                                </Label>
+                                <SelectDropDown
+                                    value={currentEnabled}
+                                    setValue={(val) => setEnabled(val === 'true')}
+                                    availableValues={enabledOptions}
+                                    showLabel={false}
+                                    emptyTitle={false}
+                                    className="bg-transparent border border-border-light rounded-md"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium text-text-primary">
+                                    {localize('com_ui_frequency') || 'Frecuencia'}
+                                </Label>
+                                <SelectDropDown
+                                    value={frequency}
+                                    setValue={createDropdownSetter(setFrequency)}
+                                    availableValues={freqOptions}
+                                    showLabel={false}
+                                    emptyTitle={false}
+                                    className="bg-transparent border border-border-light rounded-md"
+                                />
+                            </div>
+                        </div>
+
+                        {frequency === 'custom' && (
+                            <div className="space-y-2">
+                                <Label className="text-sm font-medium text-text-primary">
+                                    {localize('com_ui_frequency_minutes') || 'Minutos'}
+                                </Label>
+                                <Input
+                                    type="number"
+                                    value={customMinutes}
+                                    onChange={(e) => setCustomMinutes(e.target.value === '' ? '' : Number(e.target.value))}
+                                    placeholder="Ej. 15 (para cada 15 min)"
+                                    className="w-full bg-transparent border-border-light"
+                                />
+                            </div>
+                        )}
+
+                        <div className="space-y-2">
+                            <Label className="text-sm font-medium text-text-primary">
+                                {localize('com_ui_schedule_run_at') || 'Run At (Specific Time)'}
+                            </Label>
+                            <Input
+                                type="datetime-local"
+                                value={runAt}
+                                onChange={(e) => setRunAt(e.target.value)}
+                                className="w-full bg-transparent border-border-light"
+                            />
+                        </div>
                     </div>
                 }
                 buttons={
                     <Button
                         variant="submit"
                         onClick={handleSave}
-                        disabled={isSubmitting || !title}
+                        disabled={isSubmitting || !title || !agentId}
                         className="text-white"
                     >
                         {isSubmitting ? localize('com_ui_creating') || 'Saving...' : localize('com_ui_save') || 'Guardar'}

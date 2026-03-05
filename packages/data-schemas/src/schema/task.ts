@@ -5,6 +5,7 @@ export type TaskOrigin = 'user' | 'agent';
 
 export interface ITask extends Document {
   userId: Types.ObjectId;
+  agentId: Types.ObjectId;
   objectiveId?: Types.ObjectId;
   title: string;
   description: string;
@@ -39,6 +40,7 @@ export interface ITask extends Document {
 const TaskSchema = new Schema<ITask>(
   {
     userId: { type: Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+    agentId: { type: Schema.Types.ObjectId, ref: 'Agent', required: true, index: true },
     objectiveId: { type: Schema.Types.ObjectId, ref: 'Objective', index: true },
     title: { type: String, required: true },
     description: { type: String, required: true },

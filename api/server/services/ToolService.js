@@ -167,14 +167,23 @@ async function processRequiredActions(client, requiredActions) {
     let tool = ToolMap[currentAction.tool] ?? ActionToolMap[currentAction.tool];
 
     const handleToolOutput = async (output) => {
-      requiredActions[i].output = output;
+      let sanitizedOutput = output;
+      const tagRegex = new RegExp('<\\\\/?tool_output>', 'g');
+      if (typeof output === 'string') {
+        sanitizedOutput = `<tool_output>\n${output.replace(tagRegex, '')}\n</tool_output>`;
+      } else if (Array.isArray(output) && output[0]?.text) {
+        output[0].text = `<tool_output>\n${output[0].text.replace(tagRegex, '')}\n</tool_output>`;
+        sanitizedOutput = output;
+      }
+
+      requiredActions[i].output = sanitizedOutput;
 
       /** @type {FunctionToolCall & PartMetadata} */
       const toolCall = {
         function: {
           name: currentAction.tool,
           arguments: JSON.stringify(currentAction.toolInput),
-          output,
+          output: sanitizedOutput,
         },
         id: currentAction.toolCallId,
         type: 'function',
@@ -186,7 +195,7 @@ async function processRequiredActions(client, requiredActions) {
 
       if (imageGenTools.has(currentAction.tool)) {
         const imageOutput = output;
-        toolCall.function.output = `${currentAction.tool} displayed an image. All generated images are already plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the UI already. The user may download the images by clicking on them, but do not mention anything about downloading to the user.`;
+        toolCall.function.output = `${currentAction.tool} displayed an image.All generated images are already plainly visible, so don't repeat the descriptions in detail. Do not list download links as they are available in the UI already. The user may download the images by clicking on them, but do not mention anything about downloading to the user.`;
 
         // Streams the "Finished" state of the tool call in the UI
         client.addContentData({
@@ -412,8 +421,8 @@ const nativeTools = new Set([Tools.execute_code, Tools.file_search, Tools.web_se
 const isBuiltInTool = (toolName) =>
   Boolean(
     manifestToolMap[toolName] ||
-      toolkits.some((t) => t.pluginKey === toolName) ||
-      nativeTools.has(toolName),
+    toolkits.some((t) => t.pluginKey === toolName) ||
+    nativeTools.has(toolName),
   );
 
 /**
@@ -579,7 +588,7 @@ async function loadToolDefinitionsWrapper({ req, res, agent, streamId = null, to
       if (!isDomainAllowed) {
         logger.warn(
           `[Actions] Domain "${action.metadata.domain}" not in allowedDomains. ` +
-            `Add it to librechat.yaml actions.allowedDomains to enable this action.`,
+          `Add it to librechat.yaml actions.allowedDomains to enable this action.`,
         );
         continue;
       }
@@ -1291,7 +1300,7 @@ async function loadActionToolsForExecution({
     if (!isDomainAllowed) {
       logger.warn(
         `[Actions] Domain "${action.metadata.domain}" not in allowedDomains. ` +
-          `Add it to librechat.yaml actions.allowedDomains to enable this action.`,
+        `Add it to librechat.yaml actions.allowedDomains to enable this action.`,
       );
       continue;
     }

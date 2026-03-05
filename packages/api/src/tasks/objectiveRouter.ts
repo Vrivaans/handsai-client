@@ -17,6 +17,8 @@ router.get('/', (async (req: any, res: any) => {
 
 router.post('/', (async (req: any, res: any) => {
     try {
+        console.log("PAYLOAD POST OBJECTIVE:", req.body);
+
         const objective = await objectiveService.createObjective(req.user.id, req.body);
         res.status(201).json(objective);
     } catch (error) {
