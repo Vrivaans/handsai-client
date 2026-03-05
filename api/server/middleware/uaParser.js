@@ -18,6 +18,11 @@ const { logViolation } = require('../../cache');
  * app.use(uaParser);
  */
 async function uaParser(req, res, next) {
+  // Internal runner calls (TaskRunner/ObjectiveRunner) bypass UA checks
+  if (req.headers['x-task-runner'] === '1') {
+    return next();
+  }
+
   const { NON_BROWSER_VIOLATION_SCORE: score = 20 } = process.env;
   const ua = uap(req.headers['user-agent']);
 
